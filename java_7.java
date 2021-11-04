@@ -1,26 +1,53 @@
-public class Main
-{
-   public static void main(String[] args)
-   {
-      test();
-   }
+import java.security.SecureRandom;
+import java.util.concurrent.Semaphore;
 
-   public static void test()
-   {
-      Thread current = Thread.currentThread();
-      StackTraceElement[] methods = current.getStackTrace();
+public class task2Java {
+    private static final Semaphore semaphore = new Semaphore(8);
 
-      for(StackTraceElement info: methods)
-      {
-         System.out.println(info.getClassName());
-         System.out.println(info.getMethodName());
+    public static void main(String[] args){
+        for(int i = 0; i < 10; i++){
+            Thread t = new Thread(new Reader(String.valueOf(i)));
+            t.start();
+        }
+    }
 
-         System.out.println(info.getFileName());
-         System.out.println(info.getLineNumber());
+    private static class Reader implements Runnable {
+        private final String name;
+        Reader(String name){
+            this.name = name;
+        }
 
-         System.out.println(info.getModuleName());
-         System.out.println(info.getModuleVersion());
-         System.out.println();
-      }
-   }
+        public String getName() {
+            return "Reader" + name;
+        }
+
+        @Override
+        public void run() {
+            System.out.println(getName() + ": standing in queue");
+            try {
+                semaphore.acquire();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            var random = new SecureRandom();
+            int onHands = random.nextInt(2);
+            if(onHands == 1) {
+                System.out.println(getName() + " take book to home");
+            } else {
+                System.out.println(getName() + ": take book to reading space");
+            }
+
+
+            try {
+                int timeout = 1000;
+                Thread.sleep((long) timeout * (onHands + 1));
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            System.out.println(getName() + ": book is returned");
+            semaphore.release();
+
+        }
+    }
 }
